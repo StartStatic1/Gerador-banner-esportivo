@@ -3,357 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BGDV FIFA CARD PRO - V2</title>
+<title>BGDV FIFA CARD AUTO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
 
 <style>
-    body { background:#0a0a0a; color:#fff; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align:center; padding-bottom: 30px;}
-    .container { max-width: 600px; margin: auto; background: #1a1a1a; padding: 20px; border-radius: 15px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
-    h2 { color: #FFD700; }
-    
-    /* Sistema de Abas Simples */
-    .secao { background: #222; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #FFD700; text-align: left; }
-    .secao h3 { margin-top: 0; font-size: 16px; color: #ddd; }
-    
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-    
-    label { font-size: 12px; color: #aaa; font-weight: bold; }
-    input { width: 100%; padding: 8px; margin: 4px 0 12px 0; background:#111; border:1px solid #444; color:#fff; border-radius: 5px; box-sizing: border-box;}
-    input[type="color"] { padding: 2px; height: 35px; cursor: pointer; }
-    
-    canvas { width:100%; border-radius:15px; border:2px solid #FFD700; margin-top: 20px; background: #000; }
-    
-    button { width:100%; padding:12px; margin-top:10px; font-weight:bold; border-radius: 8px; cursor: pointer; border: none; text-transform: uppercase; transition: 0.2s;}
-    .btn-acao { background: #FFD700; color: #000; }
-    .btn-acao:hover { background: #e6c200; transform: scale(1.02); }
-    .btn-video { background: #ff4757; color: #fff; }
-    .btn-video:hover { background: #ff2e43; transform: scale(1.02); }
+body{background:#0a0a0a;color:#fff;font-family:Arial;text-align:center;}
+.container{max-width:600px;margin:auto;background:#1a1a1a;padding:20px;border-radius:15px;}
+input,button{
+    width:100%;padding:10px;margin:5px 0;
+    background:#111;border:1px solid #333;color:#fff;border-radius:8px;
+}
+canvas{width:100%;border:2px solid gold;border-radius:15px;margin-top:10px;}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-    <h2>🃏 BGDV FIFA CARD PRO</h2>
+<h2>🔥 FIFA CARD AUTO (JOGOS REAIS)</h2>
 
-    <div class="secao">
-        <h3>1. Imagens e Fundo</h3>
-        <label>Foto do Jogador (PNG Transparente é melhor):</label>
-        <input type="file" id="img-jogador" accept="image/*">
-        
-        <label>Fundo da Carta (Opcional):</label>
-        <input type="file" id="img-fundo" accept="image/*">
-    </div>
+<button onclick="buscarJogos()">📡 BUSCAR JOGOS DE HOJE</button>
 
-    <div class="secao">
-        <h3>2. Informações Gerais</h3>
-        <div class="grid-2">
-            <div>
-                <label>Nome do Jogador:</label>
-                <input type="text" id="nome" value="JOGADOR">
-            </div>
-            <div>
-                <label>Overall (OVR) & Posição:</label>
-                <div style="display:flex; gap:5px;">
-                    <input type="number" id="ovr" value="99" style="width: 50%;">
-                    <input type="text" id="pos" value="ATA" style="width: 50%;">
-                </div>
-            </div>
-        </div>
-        <label>Cor de Destaque:</label>
-        <input type="color" id="cor" value="#FFD700">
-    </div>
+<select id="listaJogos"></select>
 
-    <div class="secao">
-        <h3>3. Atributos (Status)</h3>
-        <div class="grid-3">
-            <div><label>RIT:</label><input type="number" id="pac" value="99"></div>
-            <div><label>FIN:</label><input type="number" id="sho" value="99"></div>
-            <div><label>PAS:</label><input type="number" id="pas" value="99"></div>
-            <div><label>DRI:</label><input type="number" id="dri" value="99"></div>
-            <div><label>DEF:</label><input type="number" id="def" value="99"></div>
-            <div><label>FÍS:</label><input type="number" id="phy" value="99"></div>
-        </div>
-    </div>
+<input type="file" id="img">
 
-    <div class="secao">
-        <h3>4. Trilha Sonora</h3>
-        <label>Música de fundo (Vai fixar no vídeo):</label>
-        <input type="file" id="music" accept="audio/*">
-        <audio id="audioElement" loop style="display:none;"></audio>
-    </div>
+<input type="text" id="nome" placeholder="Nome jogador">
+<input type="text" id="info" placeholder="Ex: MVP">
 
-    <canvas id="c" width="1080" height="1500"></canvas>
+<input type="color" id="cor" value="#FFD700">
 
-    <button class="btn-acao" onclick="baixarIMG()">📸 Baixar Imagem</button>
-    <button class="btn-video" id="btnRec" onclick="gerarVideo()">🎬 Gravar Vídeo (5s)</button>
+<input type="file" id="music">
+
+<canvas id="c" width="1080" height="1400"></canvas>
+
+<button onclick="gerarVideo()">🎬 GERAR VÍDEO</button>
 </div>
 
+<audio id="audio" loop></audio>
+
 <script>
-const c = document.getElementById("c");
-const ctx = c.getContext("2d");
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
 
-let jogador = null;
-let fundoCustomizado = null;
-let net = null;
-let t = 0;
+let jogador=null;
+let net=null;
+let t=0;
 
-// Referência do áudio
-const audioElement = document.getElementById("audioElement");
+// dados jogo
+let jogoAtual={};
 
-// IA BodyPix (Mantida caso o usuário upe imagem com fundo)
+// ================= IA =================
 async function loadAI(){
-    net = await bodyPix.load();
+    net=await bodyPix.load();
 }
 loadAI();
 
-// ===================
-// 🎵 MÚSICA FIXA PARA O VÍDEO
-// ===================
-document.getElementById("music").onchange = e => {
-    const file = e.target.files[0];
-    if(file){
-        audioElement.src = URL.createObjectURL(file);
-        audioElement.volume = 0.5;
-        audioElement.play();
-    }
-};
+// ================= BUSCAR JOGOS =================
+async function buscarJogos(){
+    let res=await fetch("https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d="+new Date().toISOString().split("T")[0]+"&s=Soccer");
+    let data=await res.json();
 
-// ===================
-// UPLOAD IMAGENS
-// ===================
-function carregarImagem(input, callback) {
-    if(!input.files[0]) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-        let img = new Image();
-        img.src = ev.target.result;
-        img.onload = () => callback(img);
-    }
-    reader.readAsDataURL(input.files[0]);
+    let select=document.getElementById("listaJogos");
+    select.innerHTML="";
+
+    data.events.forEach((j,i)=>{
+        let opt=document.createElement("option");
+        opt.value=i;
+        opt.text=j.strEvent;
+        select.appendChild(opt);
+    });
+
+    select.onchange=()=>{
+        let j=data.events[select.value];
+
+        jogoAtual={
+            timeA:j.strHomeTeam,
+            timeB:j.strAwayTeam,
+            placar:(j.intHomeScore??"-")+" x "+(j.intAwayScore??"-"),
+            status:j.strStatus || "HOJE"
+        };
+    };
+
+    select.dispatchEvent(new Event("change"));
 }
 
-// Fundo customizado
-document.getElementById("img-fundo").onchange = function() {
-    carregarImagem(this, img => fundoCustomizado = img);
+// ================= MÚSICA =================
+document.getElementById("music").onchange=e=>{
+    let file=e.target.files[0];
+    let audio=document.getElementById("audio");
+    audio.src=URL.createObjectURL(file);
+    audio.play();
 };
 
-// Jogador com tentativa de remoção de fundo
-document.getElementById("img-jogador").onchange = async e => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
+// ================= UPLOAD =================
+document.getElementById("img").onchange=async e=>{
+    let file=e.target.files[0];
+    let reader=new FileReader();
 
-    reader.onload = async ev => {
-        let img = new Image();
-        img.src = ev.target.result;
+    reader.onload=async ev=>{
+        let img=new Image();
+        img.src=ev.target.result;
 
-        img.onload = async () => {
-            // Verifica se a imagem já é PNG transparente
-            const tempCheck = document.createElement("canvas");
-            tempCheck.width = img.width;
-            tempCheck.height = img.height;
-            const checkCtx = tempCheck.getContext("2d");
-            checkCtx.drawImage(img,0,0);
-            const pixels = checkCtx.getImageData(0,0,img.width,img.height).data;
+        img.onload=async ()=>{
+            const seg=await net.segmentPerson(img);
 
-            let hasAlpha = false;
-            for(let i=3; i<pixels.length; i+=4){
-                if(pixels[i] < 255){ hasAlpha=true; break; }
-            }
-
-            if(hasAlpha || !net){
-                jogador = img;
-                return;
-            }
-
-            // Se não for transparente, usa BodyPix
-            const seg = await net.segmentPerson(img);
-            const temp = document.createElement("canvas");
-            temp.width = img.width;
-            temp.height = img.height;
-            const tctx = temp.getContext("2d");
+            const temp=document.createElement("canvas");
+            temp.width=img.width;
+            temp.height=img.height;
+            const tctx=temp.getContext("2d");
             tctx.drawImage(img,0,0);
 
-            const data = tctx.getImageData(0,0,img.width,img.height);
-            for(let i=0; i<data.data.length; i+=4){
-                if(seg.data[i/4] === 0){
-                    data.data[i+3] = 0; // Deixa transparente
+            const data=tctx.getImageData(0,0,img.width,img.height);
+
+            for(let i=0;i<data.data.length;i+=4){
+                if(seg.data[i/4]===0){
+                    data.data[i+3]=0;
                 }
             }
+
             tctx.putImageData(data,0,0);
-            jogador = temp;
+            jogador=temp;
         }
     }
     reader.readAsDataURL(file);
 };
 
-// ===================
-// RENDERIZAR CARTA
-// ===================
+// ================= DRAW =================
 function draw(){
-    const nome = document.getElementById("nome").value.toUpperCase();
-    const ovr = document.getElementById("ovr").value;
-    const pos = document.getElementById("pos").value.toUpperCase();
-    const cor = document.getElementById("cor").value;
+    const nome=document.getElementById("nome").value.toUpperCase();
+    const info=document.getElementById("info").value;
+    const cor=document.getElementById("cor").value;
 
-    const stats = {
-        pac: document.getElementById("pac").value,
-        sho: document.getElementById("sho").value,
-        pas: document.getElementById("pas").value,
-        dri: document.getElementById("dri").value,
-        def: document.getElementById("def").value,
-        phy: document.getElementById("phy").value
-    };
+    ctx.clearRect(0,0,1080,1400);
 
-    ctx.clearRect(0,0,1080,1500);
+    // fundo
+    let g=ctx.createLinearGradient(0,0,0,1400);
+    g.addColorStop(0,"#111");
+    g.addColorStop(1,"#000");
+    ctx.fillStyle=g;
+    ctx.fillRect(0,0,1080,1400);
 
-    // 1. Fundo da carta
-    if(fundoCustomizado){
-        ctx.drawImage(fundoCustomizado, 50, 50, 980, 1400);
-    } else {
-        let g = ctx.createLinearGradient(0,0,0,1500);
-        g.addColorStop(0,"#1a1a1a");
-        g.addColorStop(1,"#000");
-        ctx.fillStyle = g;
-        ctx.fillRect(50, 50, 980, 1400);
-    }
+    // header jogo
+    ctx.fillStyle="rgba(0,0,0,0.7)";
+    ctx.fillRect(0,0,1080,200);
 
-    // 2. Borda dourada/personalizada com pulso
-    ctx.strokeStyle = cor;
-    ctx.lineWidth = 15;
-    ctx.strokeRect(50, 50, 980, 1400);
+    ctx.font="bold 50px Arial";
+    ctx.fillStyle="#fff";
+    ctx.textAlign="left";
+    ctx.fillText(jogoAtual.timeA||"TIME A",50,120);
 
-    // Brilho animado de fundo
-    ctx.globalAlpha = 0.15;
-    ctx.fillStyle = cor;
-    ctx.fillRect(50 + Math.sin(t)*30, 50, 200, 1400);
-    ctx.globalAlpha = 1;
+    ctx.textAlign="right";
+    ctx.fillText(jogoAtual.timeB||"TIME B",1030,120);
 
-    // 3. OVR e Posição (Canto Superior Esquerdo)
-    ctx.font = "bold 140px Arial";
-    ctx.fillStyle = "#fff";
-    ctx.textAlign = "center";
-    ctx.fillText(ovr, 220, 250);
-    
-    ctx.font = "bold 60px Arial";
-    ctx.fillStyle = cor;
-    ctx.fillText(pos, 220, 330);
+    ctx.textAlign="center";
+    ctx.font="bold 70px Arial";
+    ctx.fillStyle=cor;
+    ctx.fillText(jogoAtual.placar||"VS",540,120);
 
-    // 4. Imagem do Jogador
+    ctx.font="30px Arial";
+    ctx.fillStyle="#ccc";
+    ctx.fillText(jogoAtual.status||"HOJE",540,60);
+
+    // jogador
     if(jogador){
-        // Sombra sob o jogador
-        ctx.save();
-        ctx.translate(540, 850);
-        ctx.scale(1.3, 0.3);
-        ctx.beginPath();
-        ctx.arc(0, 0, 300, 0, Math.PI*2);
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fill();
-        ctx.restore();
-
-        // Desenha jogador
-        ctx.drawImage(jogador, 150, 150, 850, 850);
+        ctx.drawImage(jogador,200,200,700,700);
     }
 
-    // 5. Linha divisória
-    ctx.beginPath();
-    ctx.moveTo(150, 950);
-    ctx.lineTo(930, 950);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "rgba(255,255,255,0.2)";
-    ctx.stroke();
+    // nome
+    ctx.font="bold 100px Arial";
+    ctx.fillStyle="#fff";
+    ctx.fillText(nome||"JOGADOR",540,1050);
 
-    // 6. Nome
-    ctx.font = "bold 100px Arial";
-    ctx.fillStyle = "#fff";
-    ctx.fillText(nome, 540, 1080);
-
-    // 7. Status (Layout 2 Colunas)
-    ctx.font = "bold 55px Arial";
-    ctx.textAlign = "left";
-    const xLeft = 250;
-    const xRight = 600;
-    const y1 = 1200;
-    const y2 = 1280;
-    const y3 = 1360;
-
-    // Coluna 1
-    ctx.fillStyle = "#fff"; ctx.fillText(`${stats.pac} RIT`, xLeft, y1);
-    ctx.fillStyle = "#fff"; ctx.fillText(`${stats.sho} FIN`, xLeft, y2);
-    ctx.fillStyle = "#fff"; ctx.fillText(`${stats.pas} PAS`, xLeft, y3);
-
-    // Coluna 2
-    ctx.fillStyle = "#fff"; ctx.fillText(`${stats.dri} DRI`, xRight, y1);
-    ctx.fillStyle = "#fff"; ctx.fillText(`${stats.def} DEF`, xRight, y2);
-    ctx.fillStyle = "#fff"; ctx.fillText(`${stats.phy} FíS`, xRight, y3);
+    ctx.font="40px Arial";
+    ctx.fillStyle=cor;
+    ctx.fillText(info||"DESTAQUE",540,1120);
 }
 
-// LOOP
+// loop
 function loop(){
-    t += 0.05;
+    t+=0.05;
     draw();
     requestAnimationFrame(loop);
 }
 loop();
 
-// ===================
-// EXPORTAR IMAGEM
-// ===================
-function baixarIMG(){
-    let a = document.createElement("a");
-    a.href = c.toDataURL("image/jpeg", 0.9); // Jpeg para ficar mais leve
-    a.download = "fifa_card.jpg";
-    a.click();
-}
-
-// ===================
-// GERAR VÍDEO COM ÁUDIO FIXADO
-// ===================
+// ================= VIDEO =================
 function gerarVideo(){
-    const btn = document.getElementById("btnRec");
-    btn.innerText = "⏳ Gravando...";
-    btn.style.background = "#555";
+    const stream=c.captureStream(30);
+    const audio=document.getElementById("audio");
 
-    // 1. Pega o stream de vídeo do canvas
-    const canvasStream = c.captureStream(30);
-    let tracks = [canvasStream.getVideoTracks()[0]];
+    let tracks=[stream.getVideoTracks()[0]];
 
-    // 2. Se tiver áudio tocando, pega o stream de áudio dele
-    if(!audioElement.paused && !audioElement.ended) {
-        // Usa mozCaptureStream para Firefox ou captureStream para Chrome
-        let audioStream = audioElement.captureStream ? audioElement.captureStream() : 
-                          (audioElement.mozCaptureStream ? audioElement.mozCaptureStream() : null);
-        
-        if(audioStream && audioStream.getAudioTracks().length > 0) {
-            tracks.push(audioStream.getAudioTracks()[0]);
-        }
+    if(audio.captureStream){
+        let aStream=audio.captureStream();
+        tracks.push(aStream.getAudioTracks()[0]);
     }
 
-    // 3. Combina vídeo + áudio
-    const finalStream = new MediaStream(tracks);
-    const recorder = new MediaRecorder(finalStream, { mimeType: "video/webm" });
-    let chunks = [];
+    const finalStream=new MediaStream(tracks);
+    const rec=new MediaRecorder(finalStream);
 
-    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    let chunks=[];
+    rec.ondataavailable=e=>chunks.push(e.data);
 
-    recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
+    rec.onstop=()=>{
+        let blob=new Blob(chunks,{type:"video/webm"});
+        let url=URL.createObjectURL(blob);
 
-        let a = document.createElement("a");
-        a.href = url;
-        a.download = "fifa_card_animado.webm";
+        let a=document.createElement("a");
+        a.href=url;
+        a.download="video.webm";
         a.click();
-
-        btn.innerText = "🎬 Gravar Vídeo (5s)";
-        btn.style.background = "#ff4757";
     };
 
-    recorder.start();
-    setTimeout(() => recorder.stop(), 5000); // Grava por 5 segundos
+    rec.start();
+    setTimeout(()=>rec.stop(),5000);
 }
 </script>
 
