@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BGDV VIDEO PRO</title>
+<title>BGDV FIFA CARD PRO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
@@ -26,13 +26,13 @@ input{
 }
 canvas{
     width:100%;
-    border:2px solid #00ffcc;
-    border-radius:10px;
+    border-radius:15px;
+    border:2px solid gold;
 }
 button{
-    margin-top:5px;
-    padding:10px;
     width:100%;
+    padding:10px;
+    margin-top:5px;
     font-weight:bold;
 }
 </style>
@@ -41,17 +41,21 @@ button{
 <body>
 
 <div class="container">
-<h2>🔥 BGDV VIDEO PRO</h2>
+<h2>🃏 BGDV FIFA CARD</h2>
 
 <input type="file" id="img">
-<input type="text" id="nome" placeholder="Nome Jogador">
-<input type="text" id="info" placeholder="Ex: 3 gols | MVP">
-<input type="color" id="cor" value="#00ffcc">
+<input type="file" id="music">
+
+<input type="text" id="nome" placeholder="Nome jogador/time">
+<button onclick="buscar()">🔍 Buscar jogador</button>
+
+<input type="text" id="info" placeholder="Ex: 90 OVR | ST">
+<input type="color" id="cor" value="#FFD700">
 
 <canvas id="c" width="1080" height="1080"></canvas>
 
-<button onclick="baixarIMG()">📸 BAIXAR IMAGEM</button>
-<button onclick="gerarVideo()">🎬 GERAR VÍDEO</button>
+<button onclick="baixarIMG()">📸 IMAGEM</button>
+<button onclick="gerarVideo()">🎬 VÍDEO</button>
 </div>
 
 <script>
@@ -60,8 +64,8 @@ const ctx = c.getContext("2d");
 
 let jogador=null;
 let net=null;
+let audio=null;
 
-// animação
 let t=0;
 
 // IA
@@ -70,7 +74,45 @@ async function loadAI(){
 }
 loadAI();
 
-// upload inteligente
+// ===================
+// 🎵 MÚSICA MANUAL
+// ===================
+document.getElementById("music").onchange = e=>{
+    const file = e.target.files[0];
+    if(file){
+        audio = new Audio(URL.createObjectURL(file));
+        audio.loop = true;
+        audio.volume = 0.5;
+        audio.play();
+    }
+};
+
+// ===================
+// 🔍 BUSCAR JOGADOR
+// ===================
+async function buscar(){
+    let nome = document.getElementById("nome").value;
+
+    if(!nome) return;
+
+    try{
+        let res = await fetch(`https://api.dicebear.com/7.x/adventurer/png?seed=${nome}`);
+        let blob = await res.blob();
+
+        let img = new Image();
+        img.src = URL.createObjectURL(blob);
+
+        img.onload = ()=>{
+            jogador = img;
+        }
+    }catch(e){
+        alert("Erro ao buscar imagem");
+    }
+}
+
+// ===================
+// UPLOAD IMAGEM
+// ===================
 document.getElementById("img").onchange = async e=>{
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -123,77 +165,64 @@ document.getElementById("img").onchange = async e=>{
     reader.readAsDataURL(file);
 };
 
-// DRAW COMPLETO
+// ===================
+// DRAW FIFA CARD
+// ===================
 function draw(){
-    const cor=document.getElementById("cor").value;
+
     const nome=document.getElementById("nome").value.toUpperCase();
     const info=document.getElementById("info").value;
+    const cor=document.getElementById("cor").value;
 
     ctx.clearRect(0,0,1080,1080);
 
-    // fundo
-    ctx.fillStyle="#020202";
+    // fundo carta
+    let g=ctx.createLinearGradient(0,0,0,1080);
+    g.addColorStop(0,"#111");
+    g.addColorStop(1,"#000");
+    ctx.fillStyle=g;
     ctx.fillRect(0,0,1080,1080);
 
-    let light=ctx.createRadialGradient(540,300,100,540,300,900);
-    light.addColorStop(0,cor+"aa");
-    light.addColorStop(1,"#000");
-    ctx.fillStyle=light;
-    ctx.fillRect(0,0,1080,1080);
+    // borda dourada
+    ctx.strokeStyle=cor;
+    ctx.lineWidth=15;
+    ctx.strokeRect(50,50,980,980);
 
-    // sombra chão
-    ctx.save();
-    ctx.translate(540,780);
-    ctx.scale(1.3,0.3);
-    ctx.beginPath();
-    ctx.arc(0,0,300,0,Math.PI*2);
-    ctx.fillStyle="rgba(0,0,0,0.6)";
-    ctx.fill();
-    ctx.restore();
+    // brilho animado
+    ctx.globalAlpha=0.2;
+    ctx.fillStyle=cor;
+    ctx.fillRect(50 + Math.sin(t)*30,50,200,980);
+    ctx.globalAlpha=1;
 
     if(jogador){
 
-        let scale=0.9 + Math.sin(t)*0.05;
+        let altura=jogador.height;
+        let isTronco = altura < 900;
 
-        ctx.save();
-        ctx.translate(540,540);
-        ctx.scale(scale,scale);
-        ctx.translate(-540,-540);
+        if(!isTronco){
+            ctx.save();
+            ctx.translate(540,780);
+            ctx.scale(1.3,0.3);
+            ctx.beginPath();
+            ctx.arc(0,0,300,0,Math.PI*2);
+            ctx.fillStyle="rgba(0,0,0,0.6)";
+            ctx.fill();
+            ctx.restore();
+        }
 
-        // glow atrás
-        ctx.globalCompositeOperation="lighter";
-        ctx.globalAlpha=0.2;
         ctx.drawImage(jogador,200,150,700,700);
-        ctx.globalAlpha=1;
-
-        ctx.globalCompositeOperation="source-over";
-
-        // jogador
-        ctx.shadowColor="rgba(0,0,0,0.8)";
-        ctx.shadowBlur=40;
-        ctx.shadowOffsetY=20;
-        ctx.drawImage(jogador,200,150,700,700);
-        ctx.shadowBlur=0;
-
-        ctx.restore();
     }
 
-    // overlay
-    let overlay=ctx.createLinearGradient(0,700,0,1080);
-    overlay.addColorStop(0,"transparent");
-    overlay.addColorStop(1,"#000");
-    ctx.fillStyle=overlay;
-    ctx.fillRect(0,700,1080,380);
-
-    // texto
-    ctx.font="bold 100px Arial";
+    // nome
+    ctx.font="bold 90px Arial";
     ctx.fillStyle="#fff";
     ctx.textAlign="center";
-    ctx.fillText(nome||"JOGADOR",540,900);
+    ctx.fillText(nome||"PLAYER",540,900);
 
-    ctx.font="40px Arial";
-    ctx.fillStyle="#ccc";
-    ctx.fillText(info||"DESTAQUE",540,970);
+    // info
+    ctx.font="50px Arial";
+    ctx.fillStyle=cor;
+    ctx.fillText(info||"90 OVR",540,970);
 }
 
 // loop
@@ -204,15 +233,15 @@ function loop(){
 }
 loop();
 
-// baixar imagem
+// baixar
 function baixarIMG(){
     let a=document.createElement("a");
     a.href=c.toDataURL();
-    a.download="banner.png";
+    a.download="card.png";
     a.click();
 }
 
-// 🎬 GERAR VÍDEO
+// vídeo
 function gerarVideo(){
     const stream = c.captureStream(30);
     const recorder = new MediaRecorder(stream);
@@ -227,13 +256,12 @@ function gerarVideo(){
 
         let a=document.createElement("a");
         a.href=url;
-        a.download="video.webm";
+        a.download="card.webm";
         a.click();
     };
 
     recorder.start();
-
-    setTimeout(()=>recorder.stop(),5000); // 5s vídeo
+    setTimeout(()=>recorder.stop(),5000);
 }
 </script>
 
