@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BGDV FIFA ULTRA</title>
+<title>BGDV VIDEO PRO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
@@ -15,12 +15,7 @@ body{
     font-family:Arial;
     text-align:center;
 }
-
-.container{
-    max-width:500px;
-    margin:auto;
-}
-
+.container{max-width:500px;margin:auto;}
 input{
     width:100%;
     padding:10px;
@@ -29,12 +24,16 @@ input{
     border:1px solid #333;
     color:#fff;
 }
-
 canvas{
     width:100%;
     border:2px solid #00ffcc;
     border-radius:10px;
-    margin-top:10px;
+}
+button{
+    margin-top:5px;
+    padding:10px;
+    width:100%;
+    font-weight:bold;
 }
 </style>
 </head>
@@ -42,7 +41,7 @@ canvas{
 <body>
 
 <div class="container">
-<h2>🔥 BGDV FIFA ULTRA</h2>
+<h2>🔥 BGDV VIDEO PRO</h2>
 
 <input type="file" id="img">
 <input type="text" id="nome" placeholder="Nome Jogador">
@@ -51,19 +50,19 @@ canvas{
 
 <canvas id="c" width="1080" height="1080"></canvas>
 
-<button onclick="baixar()">BAIXAR</button>
+<button onclick="baixarIMG()">📸 BAIXAR IMAGEM</button>
+<button onclick="gerarVideo()">🎬 GERAR VÍDEO</button>
 </div>
 
 <script>
 const c = document.getElementById("c");
 const ctx = c.getContext("2d");
 
-let jogador = null;
-let net = null;
+let jogador=null;
+let net=null;
 
 // animação
-let scale = 0.8;
-let opacity = 0;
+let t=0;
 
 // IA
 async function loadAI(){
@@ -71,7 +70,7 @@ async function loadAI(){
 }
 loadAI();
 
-// upload
+// upload inteligente
 document.getElementById("img").onchange = async e=>{
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -81,16 +80,34 @@ document.getElementById("img").onchange = async e=>{
         img.src = ev.target.result;
 
         img.onload = async ()=>{
+
+            const tempCheck = document.createElement("canvas");
+            tempCheck.width=img.width;
+            tempCheck.height=img.height;
+            const checkCtx=tempCheck.getContext("2d");
+            checkCtx.drawImage(img,0,0);
+
+            const pixels = checkCtx.getImageData(0,0,img.width,img.height).data;
+
+            let hasAlpha=false;
+            for(let i=3;i<pixels.length;i+=4){
+                if(pixels[i]<255){hasAlpha=true;break;}
+            }
+
+            if(hasAlpha){
+                jogador=img;
+                return;
+            }
+
             const seg = await net.segmentPerson(img);
 
-            const temp = document.createElement("canvas");
-            temp.width = img.width;
-            temp.height = img.height;
-
-            const tctx = temp.getContext("2d");
+            const temp=document.createElement("canvas");
+            temp.width=img.width;
+            temp.height=img.height;
+            const tctx=temp.getContext("2d");
             tctx.drawImage(img,0,0);
 
-            const data = tctx.getImageData(0,0,img.width,img.height);
+            const data=tctx.getImageData(0,0,img.width,img.height);
 
             for(let i=0;i<data.data.length;i+=4){
                 if(seg.data[i/4]===0){
@@ -99,130 +116,125 @@ document.getElementById("img").onchange = async e=>{
             }
 
             tctx.putImageData(data,0,0);
-
-            jogador = temp;
-            startAnim();
+            jogador=temp;
         }
     }
 
     reader.readAsDataURL(file);
 };
 
-// animação
-function startAnim(){
-    scale = 0.8;
-    opacity = 0;
-
-    function anim(){
-        scale += 0.01;
-        opacity += 0.02;
-
-        if(scale > 1) scale = 1;
-        if(opacity > 1) opacity = 1;
-
-        draw();
-
-        if(opacity < 1){
-            requestAnimationFrame(anim);
-        }
-    }
-
-    anim();
-}
-
-// draw
+// DRAW COMPLETO
 function draw(){
-    const cor = document.getElementById("cor").value;
-    const nome = document.getElementById("nome").value.toUpperCase();
-    const info = document.getElementById("info").value;
+    const cor=document.getElementById("cor").value;
+    const nome=document.getElementById("nome").value.toUpperCase();
+    const info=document.getElementById("info").value;
 
     ctx.clearRect(0,0,1080,1080);
 
-    // fundo estádio fake
-    let bg = ctx.createLinearGradient(0,0,0,1080);
-    bg.addColorStop(0,"#020202");
-    bg.addColorStop(1,"#000");
-    ctx.fillStyle = bg;
+    // fundo
+    ctx.fillStyle="#020202";
     ctx.fillRect(0,0,1080,1080);
 
-    // luz estádio
-    let light = ctx.createRadialGradient(540,300,100,540,300,900);
-    light.addColorStop(0, cor+"aa");
-    light.addColorStop(0.3, cor+"33");
+    let light=ctx.createRadialGradient(540,300,100,540,300,900);
+    light.addColorStop(0,cor+"aa");
     light.addColorStop(1,"#000");
-    ctx.fillStyle = light;
+    ctx.fillStyle=light;
     ctx.fillRect(0,0,1080,1080);
 
-    // partículas
-    ctx.globalAlpha = 0.1;
-    for(let i=0;i<50;i++){
-        ctx.fillRect(Math.random()*1080, Math.random()*1080, 2,2);
-    }
-    ctx.globalAlpha = 1;
+    // sombra chão
+    ctx.save();
+    ctx.translate(540,780);
+    ctx.scale(1.3,0.3);
+    ctx.beginPath();
+    ctx.arc(0,0,300,0,Math.PI*2);
+    ctx.fillStyle="rgba(0,0,0,0.6)";
+    ctx.fill();
+    ctx.restore();
 
-    // jogador
     if(jogador){
-        ctx.globalAlpha = opacity;
 
-        // sombra
-        ctx.globalAlpha = 0.3;
-        ctx.filter = "blur(25px)";
-        ctx.drawImage(jogador,250,650,600,200);
-        ctx.filter = "none";
+        let scale=0.9 + Math.sin(t)*0.05;
 
-        ctx.globalAlpha = opacity;
-
-        // escala
         ctx.save();
         ctx.translate(540,540);
         ctx.scale(scale,scale);
         ctx.translate(-540,-540);
 
-        ctx.shadowColor = cor;
-        ctx.shadowBlur = 40;
+        // glow atrás
+        ctx.globalCompositeOperation="lighter";
+        ctx.globalAlpha=0.2;
         ctx.drawImage(jogador,200,150,700,700);
-        ctx.restore();
+        ctx.globalAlpha=1;
 
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation="source-over";
+
+        // jogador
+        ctx.shadowColor="rgba(0,0,0,0.8)";
+        ctx.shadowBlur=40;
+        ctx.shadowOffsetY=20;
+        ctx.drawImage(jogador,200,150,700,700);
+        ctx.shadowBlur=0;
+
+        ctx.restore();
     }
 
     // overlay
-    let overlay = ctx.createLinearGradient(0,700,0,1080);
+    let overlay=ctx.createLinearGradient(0,700,0,1080);
     overlay.addColorStop(0,"transparent");
     overlay.addColorStop(1,"#000");
-    ctx.fillStyle = overlay;
+    ctx.fillStyle=overlay;
     ctx.fillRect(0,700,1080,380);
 
     // texto
     ctx.font="bold 100px Arial";
     ctx.fillStyle="#fff";
     ctx.textAlign="center";
-    ctx.shadowColor=cor;
-    ctx.shadowBlur=25;
     ctx.fillText(nome||"JOGADOR",540,900);
-
-    ctx.shadowBlur=0;
 
     ctx.font="40px Arial";
     ctx.fillStyle="#ccc";
     ctx.fillText(info||"DESTAQUE",540,970);
 }
 
-// inputs
-document.querySelectorAll("input").forEach(el=>{
-    el.addEventListener("input",draw);
-});
+// loop
+function loop(){
+    t+=0.05;
+    draw();
+    requestAnimationFrame(loop);
+}
+loop();
 
-// download
-function baixar(){
+// baixar imagem
+function baixarIMG(){
     let a=document.createElement("a");
     a.href=c.toDataURL();
-    a.download="banner-fifa.png";
+    a.download="banner.png";
     a.click();
 }
 
-draw();
+// 🎬 GERAR VÍDEO
+function gerarVideo(){
+    const stream = c.captureStream(30);
+    const recorder = new MediaRecorder(stream);
+
+    let chunks=[];
+
+    recorder.ondataavailable=e=>chunks.push(e.data);
+
+    recorder.onstop=()=>{
+        const blob=new Blob(chunks,{type:"video/webm"});
+        const url=URL.createObjectURL(blob);
+
+        let a=document.createElement("a");
+        a.href=url;
+        a.download="video.webm";
+        a.click();
+    };
+
+    recorder.start();
+
+    setTimeout(()=>recorder.stop(),5000); // 5s vídeo
+}
 </script>
 
 </body>
